@@ -36,7 +36,7 @@ struct x86_Instruction{
 	//not sure how we should do that
 }
 
-void(std::vector<IL_Instruction*>& ILInstructions, std::vector<x86_Instruction*>& x86Instructions){
+void IL_to_x86(std::vector<IL_Instruction*>& ILInstructions, std::vector<x86_Instruction*>& x86Instructions){
 
 	//step through all the intermediate language instructions
 	for(int i = 0; i < ILInstructions.size(); ++i){
