@@ -13,7 +13,75 @@ struct IL_Instruction{
 
 };
 
-//this should grow as we find out what instructions we need
+//Other x86 instructions we probably need and instruction syntax:
+//I'm really just taking a stab at finding useful instructions
+//Instr OpCode      Op1     Op2     Op3
+//-----------------------------------
+//MOV:  88 /r       r/m8    r8
+//      89 /r       r/m16   r16
+//      89 /r       r/m32   r32
+//      8A /r       r8      r/m8
+//      8B /r       r16     r/m16
+//      8B /r       r32     r/m32
+//      There are probably others that we need, for segment registers
+//      and such
+//ADD:  04 ib       AL      imm8
+//      05 iw       AX      imm16
+//      05 id       EAX     imm32
+//      80 /0 ib    r/m8    imm8
+//      81 /0 iw    r/m16   imm16
+//      81 /0 id    r/m31   imm32
+//SUB:  1C ib       AL      imm8
+//      1D iw       AX      imm16
+//      1D id       EAX     imm32
+//      80 /3 ib    r/m8    imm8
+//      81 /3 iw    r/m16   imm16
+//      81 /3 id    r/m31   imm32
+//XOR:  34 ib       AL      imm8
+//      35 iw       AX      imm16
+//      35 id       EAX     imm32
+//      80 /6 ib    r/m8    imm8
+//      81 /6 iw    r/m16   imm16
+//      81 /6 id    r/m31   imm32
+//
+//      I'm not really sure what the /(0|3|6) means, I think the r/m means
+//      registers or memory locations.
+//
+//      We probably only need the 32 bit instructions, but I'm not sure if we
+//      would rather use the 16 or 8 bit versions depending on the number of
+//      bytes we're dealing with. We should probably iron that out a bit with
+//      Vishwath and John.
+//
+// shifts might come in helpful to... SAR SHR SAL SHL
+// ones with A are arithmatic shifts and preserve the sign
+// ones with H are logical and don't.  I don't knwo which ones
+// are useful...there are ALOT of special cases...the table is 
+// two pages long in the reference manual...
+// starts on page 361 pdf 359 book
+//
+// ands and ors might also be useful for masking and the like...
+// they are on page volume 2 17 pdf (or) and volume 1 page 136 pdf (and)
+//
+// AND:	24 ib  	    AL      imm8
+// 	25 iw       AX      imm16
+// 	25 id       EAX     imm32
+// 	80 /4 ib    r/m8    imm8
+// 	81 /4 iw    r/m16   imm16
+// 	81 /4 id    r/m32   imm32
+//
+// OR: 0C ib        AL      imm8
+//     0D iw 	    AX      imm16
+//     0D id        EAX     imm32
+//     80 /1 ib     r/m8    imm8
+//     81 /1 iw     r/m16   imm16
+//     81 /1 id     r/m32   imm32
+//     
+//     there are more that do register-regester args
+//     as I assume there are with the ones you posted but 
+//     I figure we will only need the immdiate ones anyway
+
+
+
 enum x86_Instruction_type{x86_MOV, x86_XOR, x86_OR, x86_ADD, x86_SUB, x86_RSHIFT x86_LSHIFT};
 
 //this might not work unless we can come up with a way to 
