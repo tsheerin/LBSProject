@@ -107,6 +107,12 @@ struct x86_Instruction{
 
     //some how need to indicate args
     //not sure how we should do that
+    x86_Instruction(x86_Instruction_type type);
+}
+
+x86_Instruction::x86_Instruction(x86_Instruction_type type)
+{
+    instruction = type;
 }
 
 void IL_to_x86(std::vector<IL_Statement*>& ILInstructions, std::vector<x86_Instruction*>& x86Instructions){
@@ -114,6 +120,7 @@ void IL_to_x86(std::vector<IL_Statement*>& ILInstructions, std::vector<x86_Instr
     //represents the number of bytes we 
     //are currently operationg on
     int bytesInBuffer;
+    int start, end;
     const REGISTER_WIDTH = 4;
 
     //step through all the intermediate language instructions
@@ -130,8 +137,10 @@ void IL_to_x86(std::vector<IL_Statement*>& ILInstructions, std::vector<x86_Instr
                     //current buffer content
 
                     bytesInBuffer = current->operand;
+                    start = end;
+                    end += bytesInBuffer;
 
-                    //push instructionss to read in
+                    //push instructions to read in
                     //new bytes
 
                     break;
@@ -139,18 +148,28 @@ void IL_to_x86(std::vector<IL_Statement*>& ILInstructions, std::vector<x86_Instr
             case ADD:
                 {
                     if(bytesInBuffer <= REGISTER_WIDTH){
-                        //insert prepratory instructions
+                        for(int i = 0; i < bytesInBuffer; i += 4)
+                        {
+                            //insert prepratory instructions
+                            x86_instruction* movFromMem = 
+                                new x86_instruction(x86_MOV);
 
-                        //insert the add instruction
-                        x86_instruction* temp = new x86_instruction();
-                        temp->instruction = x86_ADD;
+                            //insert the add instruction
+                            x86_instruction* add = new x86_instruction(x86_ADD);
 
-                        //set args
+                            //set args
 
-                        //push on list
-                        x86Instructions.push_back(temp);
+                            x86_instruction* movToMem = 
+                                new x86_instruction(x86_MOV);
 
-                        //mask off the top register_with - bytesInBuffer bytes
+                            //push on list
+                            x86Instructions.push_back(movFromMem);
+                            x86Instructions.push_back(add);
+                            x86Instructions.push_back(movToMem);
+
+                            //mask off the top register_with - bytesInBuffer 
+                            //bytes
+                        }
 
                     }else if(bytesInBuffer > REGISTER_WIDTH){
                         //we only have to deal with the least four bytes because 
