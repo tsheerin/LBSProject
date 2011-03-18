@@ -185,7 +185,9 @@ void IL_to_x86(std::vector<IL_Statement*>& ILInstructions, std::vector<x86_Instr
                        }
                      }
 
-                     //if bytesinbuffer mod 4 != 0 we will have to handle it here
+                     if(bytesInBuffer % REGISTER_WIDTH != 0){
+
+                     }
 
                     break;
                 }
