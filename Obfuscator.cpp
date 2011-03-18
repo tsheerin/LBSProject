@@ -101,9 +101,11 @@ enum x86_Instruction_type{x86_MOV, x86_XOR, x86_OR, x86_ADD, x86_SUB, x86_RSHIFT
 //this but x86 assembly syntax is so hella complex, 
 //I'm not sure there is
 enum x86_registers{REG_EAX, REG_EBX, REG_ECX, REG_EDX};
+enum x86_operands{REG_EAX, REG_EBX, REG_ECX, REG_EDX, MEM_LOC};
 
 struct x86_Instruction{
     x86_Instruction_type instruction;
+    std::vector<x86_operands> operands;
 
     //some how need to indicate args
     //not sure how we should do that
@@ -147,9 +149,9 @@ void IL_to_x86(std::vector<IL_Statement*>& ILInstructions, std::vector<x86_Instr
                 }
             case ADD:
                 {
-                    if(bytesInBuffer <= REGISTER_WIDTH){
-                        for(int i = 0; i < bytesInBuffer; i += 4)
-                        {
+                    for(int i = 0; i < bytesInBuffer; i += 4)
+                    {
+                        if(bytesInBuffer <= REGISTER_WIDTH){
                             //insert prepratory instructions
                             x86_instruction* movFromMem = 
                                 new x86_instruction(x86_MOV);
@@ -169,22 +171,26 @@ void IL_to_x86(std::vector<IL_Statement*>& ILInstructions, std::vector<x86_Instr
 
                             //mask off the top register_with - bytesInBuffer 
                             //bytes
+                        }else if(bytesInBuffer > REGISTER_WIDTH){
+                            //we only have to deal with the least four bytes 
+                            //because right now args cant be over four bytes.
+                            //however if interger overflow occurs we some how 
+                            //need to
+                            //deal with higher stuff in the buffer...
+                            //
+                            //I suppose we could test 
+                            //overflowPoint - currnt4Bytes to
+                            //see
+                            //if it is greater than the add argument, then if it 
+                            //is 
+                            //compute the carry
+                            //into the next four bytes and do it all again until 
+                            //we 
+                            //get to the end of the 
+                            //buffer...
                         }
-
-                    }else if(bytesInBuffer > REGISTER_WIDTH){
-                        //we only have to deal with the least four bytes because 
-                        //right now args cant be over four bytes.
-                        //however if interger overflow occurs we some how need to
-                        //deal with higher stuff in the buffer...
-                        //
-                        //I suppose we could test overflowPoint - currnt4Bytes to
-                        //see
-                        //if it is greater than the add argument, then if it is 
-                        //compute the carry
-                        //into the next four bytes and do it all again until we 
-                        //get to the end of the 
-                        //buffer...
                     }
+
                     break;
                 }
             case SUB:
