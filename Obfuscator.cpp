@@ -20,34 +20,35 @@ struct IL_Instruction{
 
 //Other x86 instructions we probably need and instruction syntax:
 //I'm really just taking a stab at finding useful instructions
+//>>>>>> means it's a 32 bit instruction, what we're focusing on for now
 //Instr OpCode      Op1     Op2     Op3
 //-----------------------------------
 //MOV:  88 /r       r/m8    r8
 //      89 /r       r/m16   r16
-//      89 /r       r/m32   r32
+//>>>>>>89 /r       r/m32   r32
 //      8A /r       r8      r/m8
 //      8B /r       r16     r/m16
-//      8B /r       r32     r/m32
+//>>>>>>8B /r       r32     r/m32
 //      There are probably others that we need, for segment registers
 //      and such
 //ADD:  04 ib       AL      imm8
 //      05 iw       AX      imm16
-//      05 id       EAX     imm32
+//>>>>>>05 id       EAX     imm32
 //      80 /0 ib    r/m8    imm8
 //      81 /0 iw    r/m16   imm16
-//      81 /0 id    r/m31   imm32
+//>>>>>>81 /0 id    r/m32   imm32
 //SUB:  1C ib       AL      imm8
 //      1D iw       AX      imm16
-//      1D id       EAX     imm32
+//>>>>>>1D id       EAX     imm32
 //      80 /3 ib    r/m8    imm8
 //      81 /3 iw    r/m16   imm16
-//      81 /3 id    r/m31   imm32
+//>>>>>>81 /3 id    r/m32   imm32
 //XOR:  34 ib       AL      imm8
 //      35 iw       AX      imm16
-//      35 id       EAX     imm32
+//>>>>>>35 id       EAX     imm32
 //      80 /6 ib    r/m8    imm8
 //      81 /6 iw    r/m16   imm16
-//      81 /6 id    r/m31   imm32
+//>>>>>>81 /6 id    r/m32   imm32
 //
 //      I'm not really sure what the /(0|3|6) means, I think the r/m means
 //      registers or memory locations.
@@ -67,15 +68,15 @@ struct IL_Instruction{
 // ands and ors might also be useful for masking and the like...
 // they are on page volume 2 17 pdf (or) and volume 1 page 136 pdf (and)
 //
-// AND:	24 ib  	    AL      imm8
-// 	25 iw       AX      imm16
-// 	25 id       EAX     imm32
-// 	80 /4 ib    r/m8    imm8
-// 	81 /4 iw    r/m16   imm16
-// 	81 /4 id    r/m32   imm32
+// AND:   24 ib         AL      imm8
+//    25 iw       AX      imm16
+//    25 id       EAX     imm32
+//    80 /4 ib    r/m8    imm8
+//    81 /4 iw    r/m16   imm16
+//    81 /4 id    r/m32   imm32
 //
 // OR: 0C ib        AL      imm8
-//     0D iw 	    AX      imm16
+//     0D iw        AX      imm16
 //     0D id        EAX     imm32
 //     80 /1 ib     r/m8    imm8
 //     81 /1 iw     r/m16   imm16
@@ -106,6 +107,17 @@ enum x86_operands{REG_EAX, REG_EBX, REG_ECX, REG_EDX, MEM_LOC};
 struct x86_Instruction{
     x86_Instruction_type instruction;
     std::vector<x86_operands> operands;
+
+    //Other possible variables we might need:
+    //srcMemLoc and destMemLoc store the memory locations for operatnds, 
+    //using int for now unless we find a better type
+    //The printing function will use the MEM_LOC operand value to determine
+    //if it needs to look at these
+    int srcMemLoc;
+    int destMemLoc;
+    //immediate denotes if one of the operands is an immediate, the immediate
+    //value will be stored in srcMemLoc
+    int immediate = -1;
 
     //some how need to indicate args
     //not sure how we should do that
@@ -152,17 +164,39 @@ void IL_to_x86(std::vector<IL_Statement*>& ILInstructions, std::vector<x86_Instr
                     for(int i = 0; i < bytesInBuffer; i += 4)
                     {
                         if(bytesInBuffer <= REGISTER_WIDTH){
+                        }else if(bytesInBuffer > REGISTER_WIDTH){
+                            //we only have to deal with the least four bytes because 
+                            //right now args cant be over four bytes.
+                            //however if interger overflow occurs we some how need to
+                            //deal with higher stuff in the buffer...
+                            //
+                            //I suppose we could test overflowPoint - currnt4Bytes to
+                            //see
+                            //if it is greater than the add argument, then if it is 
+                            //compute the carry
+                            //into the next four bytes and do it all again until we 
+                            //get to the end of the 
+                            //buffer...
                             //insert prepratory instructions
                             x86_instruction* movFromMem = 
                                 new x86_instruction(x86_MOV);
+                            movFremMem->operands.push_back(x86_EAX);
+                            movFremMem->operands.push_back(MEM_LOC);
+                            movFromMem->srcMemLoc = begin+i;
+
 
                             //insert the add instruction
                             x86_instruction* add = new x86_instruction(x86_ADD);
+                            add->immediate = 1;
+                            add->srcMemLoc = current->opperand;
 
                             //set args
 
                             x86_instruction* movToMem = 
                                 new x86_instruction(x86_MOV);
+                            movFremMem->operands.push_back(MEM_LOC);
+                            movFremMem->operands.push_back(x86_EAX);
+                            movFromMem->srcMemLoc = begin+i;
 
                             //push on list
                             x86Instructions.push_back(movFromMem);
@@ -171,26 +205,12 @@ void IL_to_x86(std::vector<IL_Statement*>& ILInstructions, std::vector<x86_Instr
 
                             //mask off the top register_with - bytesInBuffer 
                             //bytes
-                        }else if(bytesInBuffer > REGISTER_WIDTH){
-                            //we only have to deal with the least four bytes 
-                            //because right now args cant be over four bytes.
-                            //however if interger overflow occurs we some how 
-                            //need to
-                            //deal with higher stuff in the buffer...
-                            //
-                            //I suppose we could test 
-                            //overflowPoint - currnt4Bytes to
-                            //see
-                            //if it is greater than the add argument, then if it 
-                            //is 
-                            //compute the carry
-                            //into the next four bytes and do it all again until 
-                            //we 
-                            //get to the end of the 
-                            //buffer...
                         }
                     }
 
+                    if(bytesInBuffer % REGISTER_WIDTH != 0){
+
+                    }
                     break;
                 }
             case SUB:
@@ -258,3 +278,4 @@ void IL_to_x86(std::vector<IL_Statement*>& ILInstructions, std::vector<x86_Instr
         }
     }
 }
+/* vi: set tabstop=3 expandtab shiftwidth=3 softtabstop=3: */
